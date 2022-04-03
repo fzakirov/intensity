@@ -104,7 +104,7 @@ def evo_from_epo(p, epo_50, epo_60, epo_70, epo_80):
          list_of_evo_80)
 
 def create_zakl_evokeds(low, high): 
-  ages_td=pd.read_csv('Felix/intensity/children/TD/td_df.csv', dtype=str) #df с возрастом и айдишниками
+  ages_td=pd.read_csv('Felix/intensity/children/TD/td_df.csv', dtype=str)
   ages_td['AGE']=ages_td['AGE'].astype(float)
   p=list(ages_td[(ages_td['AGE']>=low) & (ages_td['AGE']<=high)]['ID'])
 
