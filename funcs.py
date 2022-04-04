@@ -1,7 +1,3 @@
-pip install mne
-
-pip install PyPDF2
-
 import mne
 import os
 import numpy as np
@@ -115,7 +111,7 @@ def create_zakl_evokeds(low, high):
 
   for i in p:
     epo=mne.read_epochs('Felix/intensity/children/TD/epo_3sd_ica/'+i+'-epo.fif')
-    epo=epo.apply_baseline((-0.2, 0.0))..crop(-0.2,0.7)
+    epo=epo.apply_baseline((-0.2, 0.0)).crop(-0.2,0.7)
 
     evo_50=epo['50dB'].average()
     evo_60=epo['60dB'].average()
