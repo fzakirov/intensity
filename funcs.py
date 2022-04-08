@@ -3,6 +3,7 @@ import os
 import numpy as np
 from mne.preprocessing import ICA
 import pandas as pd
+import itertools
 
 def drop_epochs_by_sigma(epochs_1, sd):
     maximas=[]
@@ -20,7 +21,7 @@ def drop_epochs_by_sigma(epochs_1, sd):
         for j in range(epochs_1.get_data().shape[1]):
             if maximas[i,j]>th_max[j] or maximas[i,j]<th_min[j]:
                 rej.append(i)
-    print()            
+    print()
     reject_list=list(set(rej))
     epochs_1.drop(reject_list)
 
@@ -41,11 +42,11 @@ def epo_from_raw(raws, baseline):
   for i,c in enumerate(raws):
 
     events=mne.find_events(c)
-    
+
     epochs=mne.Epochs(c, events, event_id={'80dB':1, '70dB':2,'60dB':3, '50dB':4},
                   #reject=dict(eeg=150e-6),
                    baseline=None, tmin=-0.5, tmax=0.8, preload=True)
-    
+
     epochs=epochs.resample(250).crop(-0.2, 0.7).apply_baseline(baseline)
 
     drop_epochs_by_sigma(epochs, 3)
@@ -59,12 +60,12 @@ def epo_from_raw(raws, baseline):
     list_of_epo_60.append(epo_60)
     list_of_epo_70.append(epo_70)
     list_of_epo_80.append(epo_80)
-  
+
   return(list_of_epo_50,
          list_of_epo_60,
          list_of_epo_70,
          list_of_epo_80)
-  
+
 
     # evo_50=epochs['50dB'].average()#.apply_baseline((-0.2, 0))
     # evo_60=epochs['60dB'].average()#.apply_baseline((-0.2, 0))
@@ -81,9 +82,9 @@ def evo_from_epo(p, epo_50, epo_60, epo_70, epo_80):
   list_of_evo_60=[]
   list_of_evo_70=[]
   list_of_evo_80=[]
-  
+
   for i,c in enumerate(p):
-    
+
     evo_50=epo_50[i].average()#.apply_baseline((-0.2, 0))
     evo_60=epo_60[i].average()#.apply_baseline((-0.2, 0))
     evo_70=epo_70[i].average()#.apply_baseline((-0.2, 0))
@@ -93,13 +94,13 @@ def evo_from_epo(p, epo_50, epo_60, epo_70, epo_80):
     list_of_evo_60.append(evo_60)
     list_of_evo_70.append(evo_70)
     list_of_evo_80.append(evo_80)
-  
+
   return(list_of_evo_50,
          list_of_evo_60,
          list_of_evo_70,
          list_of_evo_80)
 
-def create_zakl_evokeds(low, high): 
+def create_zakl_evokeds(low, high):
   ages_td=pd.read_csv('Felix/intensity/children/TD/td_df.csv', dtype=str)
   ages_td['AGE']=ages_td['AGE'].astype(float)
   p=list(ages_td[(ages_td['AGE']>=low) & (ages_td['AGE']<=high)]['ID'])
@@ -117,7 +118,7 @@ def create_zakl_evokeds(low, high):
     evo_60=epo['60dB'].average()
     evo_70=epo['70dB'].average()
     evo_80=epo['80dB'].average()
-  
+
     list_of_evo_50.append(evo_50)
     list_of_evo_60.append(evo_60)
     list_of_evo_70.append(evo_70)
@@ -126,7 +127,7 @@ def create_zakl_evokeds(low, high):
   return(list_of_evo_50, list_of_evo_60,
            list_of_evo_70, list_of_evo_80)
 
-def plot_evoked(ch_name, list_of_evoked_1, evoked_sub_1, 
+def plot_evoked(ch_name, list_of_evoked_1, evoked_sub_1,
                 condition_title, sub, std_num=2):
 
   ga_evoked_1=mne.grand_average(list_of_evoked_1)
@@ -158,7 +159,7 @@ def plot_evoked(ch_name, list_of_evoked_1, evoked_sub_1,
   plt.title(ch_name)
   plt.ylabel('Amplitude, μV')
   plt.xlabel('Time, s')
- 
+
   plt.legend()
   return(plt)
 
@@ -207,14 +208,14 @@ def plot_erps(p, path, evo50, evo60, evo70, evo80):
 def plot_ga_df(ch_name, df_con, list_of_df, cond, color='b', std_num=2, std=False, limits=[-0.5, 0.8, -15, 15]):
 
     for_std=np.array([ev[ch_name] for ev in (list_of_df)])
-    std_array=np.std(for_std,0) 
+    std_array=np.std(for_std,0)
     #gstd_evoked_array=scipy.stats.sem(for_std)
 
     plt.plot(df_con.time/1000, df_con[ch_name], color, label='TD '+cond)
-    
+
 
     if std==True:
-        plt.fill_between(df_con.time/1000, df_con.FCz - std_num*std_array, 
+        plt.fill_between(df_con.time/1000, df_con.FCz - std_num*std_array,
                    df_con.FCz + std_num*std_array, color, alpha=0.3)
 
 
@@ -227,16 +228,16 @@ def plot_ga_df(ch_name, df_con, list_of_df, cond, color='b', std_num=2, std=Fals
     plt.legend()
     return(plt)
 
-def plot_evoked_single(ch_name, evoked_1, evoked_2, 
+def plot_evoked_single(ch_name, evoked_1, evoked_2,
                 condition_title, sub1, sub2, std_num=2):
-  
+
   times=evoked_1.times
 
   #ga_evoked_1.resample(200)
   ch_num=evoked_1.ch_names.index(ch_name)
   evoked_1=evoked_1.apply_baseline((-0.2, 0.0))
   evoked_array_1=evoked_1.data[ch_num]
-  
+
   #evoked_sub_1.resample(200)
   ch_num=evoked_2.ch_names.index(ch_name)
   evoked_2=evoked_2.apply_baseline((-0.2, 0.0))
@@ -253,7 +254,7 @@ def plot_evoked_single(ch_name, evoked_1, evoked_2,
   plt.title(ch_name)
   plt.ylabel('Amplitude, μV')
   plt.xlabel('Time, s')
- 
+
   plt.legend()
   return(plt)
 
@@ -262,19 +263,19 @@ def to_dataframe_new(epochs, cond, chan, delay=False, invert=False):
     evoked=epochs[cond].average().apply_baseline((0.0, 0.3)).resample(100)
   else:
     evoked=epochs[cond].average().apply_baseline((-0.2, 0.0)).resample(100)
-    
+
   df=evoked.to_data_frame()
 
   times=[]
   for i in range(-500, 800, 10):
-    times.append(i)           
-    
+    times.append(i)
+
   df['time']=times
-  df=df[[chan, 'time']]                  
-    
+  df=df[[chan, 'time']]
+
   if invert==True:
     df[chan]=df[chan]*(-1)
-    
+
   return(df)
 
 def create_evo_csv (sub, path_epo, path_csv, baseline=(-0.2,0)):
@@ -315,7 +316,7 @@ def create_evo (sub, path_epo, baseline=(-0.2,0)):
     evo_70=epochs['70dB'].average()
     evo_60=epochs['60dB'].average()
     evo_50=epochs['50dB'].average()
-    
+
     list_of_evo_80.append(evo_80)
     list_of_evo_70.append(evo_70)
     list_of_evo_60.append(evo_60)
@@ -327,6 +328,25 @@ def create_evo (sub, path_epo, baseline=(-0.2,0)):
   ga_50=mne.grand_average(list_of_evo_50)
 
   return(ga_50, ga_60, ga_70, ga_80)
+
+def evoked_to_csv (epochs, baseline=(-0.2, 0.0), path=""):
+    epochs=epochs.apply_baseline()
+    evoked_50=epochs['50dB'].average()
+    evoked_60=epochs['60dB'].average()
+    evoked_70=epochs['70dB'].average()
+    evoked_80=epochs['80dB'].average()
+
+    tb_pnd=evoked_50.to_data_frame()
+    tb_pnd.to_csv('evoked_FZ006_50.csv',sep=';')
+
+    tb_pnd=evoked_60.to_data_frame()
+    tb_pnd.to_csv('evoked_FZ006_60.csv',sep=';')
+
+    tb_pnd=evoked_70.to_data_frame()
+    tb_pnd.to_csv('evoked_FZ006_70.csv',sep=';')
+
+    tb_pnd=evoked_80.to_data_frame()
+    tb_pnd.to_csv('evoked_FZ006_80.csv',sep=';')
 
 def find_comp(data, comp, condition, nsubj, df, chan):
     imax=data[data['time'].isin(df[df.ID==nsubj][comp+'_window'].iloc[0])][chan].mean()
